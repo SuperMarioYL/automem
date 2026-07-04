@@ -20,9 +20,4 @@
     <text x="440" y="192" text-anchor="middle" font-size="18" font-weight="500" fill="#A1A1A8">the offline memory layer so your coding agent remembers across restarts</text>
     <text x="440" y="217" text-anchor="middle" font-size="13.5" font-weight="500" fill="#83838A">one binary · no vector DB · no account · no key</text>
   </g>
-  <!-- domain pulse dot (decorative, infinite) -->
-  <circle cx="440" cy="248" r="3" fill="#8985FF">
-    <animate attributeName="opacity" values="0.35;1;0.35" keyTimes="0;0.5;1" dur="2.4s"
-             calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" repeatCount="indefinite"/>
-  </circle>
 </svg>
