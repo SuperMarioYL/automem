@@ -1,0 +1,5 @@
+User: refactor auth.py to use dataclasses
+Assistant: Done. I converted the User and Session models in auth.py to
+@dataclass and kept the old constructor signature working via __post_init__.
+User: also make sure the old constructor keeps working for callers we don't own
+Assistant: Kept a compatibility shim; existing `User(name, email)` calls still work.

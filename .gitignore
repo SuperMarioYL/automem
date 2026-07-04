@@ -1,0 +1,33 @@
+# Compiled binaries
+/automem
+/dist/
+*.exe
+*.out
+
+# Go build & test artifacts
+*.test
+*.prof
+/coverage.out
+/coverage.txt
+
+# Editor / OS noise
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Local memory store (never commit a user's captured memory)
+.automem/
+*.jsonl
+
+# Build scratch
+.builder_*
+.build_metadata*
+.spawn*
+.stage_*
+_build_ctx.json
+*_BLOCKED.md
+DRIFT*
+BUILD_SETUP_NEXT_STEPS.md
+CLAUDE.md
+.claude/

@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: true
+
+      - name: Verify formatting
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt-clean:"; echo "$unformatted"; exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race ./...
+
+      - name: Build
+        run: go build -o automem ./cmd/automem
+
+      - name: Smoke test the happy path
+        run: |
+          export AUTOMEM_DIR="$(mktemp -d)/.automem"
+          printf 'User: refactor auth.py to use dataclasses\n' \
+            | ./automem capture --agent claude-code --cwd /proj/api
+          ./automem recall "auth.py dataclasses" | grep -q "auth.py"
+          ./automem stats | grep -q "1 stored, 1 injected"
