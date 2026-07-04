@@ -11,7 +11,7 @@
   <!-- ===== static connector base lines ===== -->
   <g stroke="#C9C9D0" stroke-width="1.5" fill="none">
     <!-- Stop hook: agent -> capture -->
-    <line x1="230" y1="118" x2="330" y2="118" marker-end="url(#ah-l)"/>
+    <line x1="230" y1="162" x2="330" y2="122" marker-end="url(#ah-l)"/>
     <!-- capture -> store (append) -->
     <line x1="500" y1="118" x2="650" y2="140" marker-end="url(#ah-l)"/>
     <!-- SessionStart hook: agent -> recall -->
@@ -19,12 +19,12 @@
     <!-- store -> recall (read) -->
     <line x1="650" y1="220" x2="500" y2="242" marker-end="url(#ah-l)"/>
     <!-- recall -> inject back into agent -->
-    <line x1="330" y1="262" x2="230" y2="286" marker-end="url(#ah-l)"/>
+    <line x1="330" y1="262" x2="230" y2="262" marker-end="url(#ah-l)"/>
   </g>
 
   <!-- ===== marching-dash data flow (direction = data direction) ===== -->
   <g stroke-width="1.5" fill="none" stroke-linecap="round">
-    <line x1="230" y1="118" x2="326" y2="118" stroke="#5E5CE6" stroke-opacity="0.5" stroke-dasharray="6 10">
+    <line x1="230" y1="162" x2="326" y2="124" stroke="#5E5CE6" stroke-opacity="0.5" stroke-dasharray="6 10">
       <animate attributeName="stroke-dashoffset" from="32" to="0" dur="1.6s" repeatCount="indefinite"/>
     </line>
     <line x1="500" y1="118" x2="646" y2="139" stroke="#5E5CE6" stroke-opacity="0.5" stroke-dasharray="6 10">
@@ -36,7 +36,7 @@
     <line x1="330" y1="242" x2="234" y2="242" stroke="#10A37F" stroke-opacity="0.5" stroke-dasharray="6 10">
       <animate attributeName="stroke-dashoffset" from="32" to="0" dur="1.6s" begin="-0.9s" repeatCount="indefinite"/>
     </line>
-    <line x1="330" y1="262" x2="234" y2="285" stroke="#10A37F" stroke-opacity="0.5" stroke-dasharray="6 10">
+    <line x1="330" y1="262" x2="234" y2="262" stroke="#10A37F" stroke-opacity="0.5" stroke-dasharray="6 10">
       <animate attributeName="stroke-dashoffset" from="32" to="0" dur="1.6s" begin="-1.2s" repeatCount="indefinite"/>
     </line>
   </g>
@@ -44,7 +44,7 @@
   <!-- ===== data packet dots ===== -->
   <g>
     <circle r="3" fill="#5E5CE6">
-      <animateMotion path="M230,118 L326,118" dur="2.4s" repeatCount="indefinite"/>
+      <animateMotion path="M230,162 L326,124" dur="2.4s" repeatCount="indefinite"/>
       <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.4s" repeatCount="indefinite"/>
     </circle>
     <circle r="3" fill="#5E5CE6">
