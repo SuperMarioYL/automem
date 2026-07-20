@@ -9,7 +9,7 @@
 <p><sub>automem is the offline memory layer that makes any coding agent remember across restarts — one binary, no vector DB, no account, no key.</sub></p>
 
 <p align="center">
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-black.svg" alt="License: MIT"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License: Apache-2.0"></a>
   <a href="https://github.com/SuperMarioYL/automem/releases"><img src="https://img.shields.io/github/v/release/SuperMarioYL/automem?color=5E5CE6" alt="Latest release"></a>
   <a href="https://github.com/SuperMarioYL/automem/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/SuperMarioYL/automem/ci.yml?branch=main&label=ci" alt="CI status"></a>
   <img src="https://img.shields.io/badge/go-1.24-00ADD8.svg" alt="Go 1.24">
@@ -161,11 +161,11 @@ Honest positioning against the incumbent that proved the demand — it beats `au
 
 <h2><img src="https://api.iconify.design/tabler:currency-dollar.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> Pricing</h2>
 
-The local substrate is **free and open source (MIT), forever** — capture, recall, stats, and agent wiring all run fully offline with no account. The commercial tier is the one thing the substrate deliberately does *not* do for free: leaving your machine.
+The local substrate is **free and open source (Apache 2.0), forever** — capture, recall, stats, and agent wiring all run fully offline with no account. The commercial tier is the one thing the substrate deliberately does *not* do for free: leaving your machine.
 
 | Tier | Price | What you get |
 |---|---|---|
-| **Local** | Free · MIT | Single offline binary: capture, recall, stats, `automem install` for Claude Code + Aider. No account, no key, no network. |
+| **Local** | Free · Apache-2.0 | Single offline binary: capture, recall, stats, `automem install` for Claude Code + Aider. No account, no key, no network. |
 | **Sync** | Paid | Cross-machine memory sync (`automem sync`) — the same store, on every machine you code from. |
 | **Team** | **$8 / seat / month** | Shared team scopes + cross-machine sync + audit log (`automem team`). One memory layer for the whole team's decisions, quirks, and conventions. |
 
@@ -187,7 +187,7 @@ Issues and PRs welcome. Please [open an issue](https://github.com/SuperMarioYL/a
 
 <h2><img src="https://api.iconify.design/tabler:license.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> License</h2>
 
-Released under the [MIT License](./LICENSE).
+Released under the [Apache License, Version 2.0](./LICENSE).
 
 ## Share this
 
@@ -197,4 +197,4 @@ restarts. One binary, no vector DB, no account, no key. Your Agent picks up wher
 the last session left off. https://github.com/SuperMarioYL/automem
 ```
 
-<p align="center"><sub><a href="./LICENSE">MIT</a> © 2026 SuperMarioYL</sub></p>
+<p align="center"><sub><a href="./LICENSE">Apache-2.0</a> © 2026 SuperMarioYL</sub></p>
