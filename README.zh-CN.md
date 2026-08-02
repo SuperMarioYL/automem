@@ -9,7 +9,7 @@
 <p><sub>automem 是一个离线记忆层，让任何编码 Agent 在重启后依然记得上一次会话 —— 一个二进制，无向量数据库、无账号、无密钥。</sub></p>
 
 <p align="center">
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-black.svg" alt="License: MIT"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-black.svg" alt="License: Apache-2.0"></a>
   <a href="https://github.com/SuperMarioYL/automem/releases"><img src="https://img.shields.io/github/v/release/SuperMarioYL/automem?color=5E5CE6" alt="最新版本"></a>
   <a href="https://github.com/SuperMarioYL/automem/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/SuperMarioYL/automem/ci.yml?branch=main&label=ci" alt="CI 状态"></a>
   <img src="https://img.shields.io/badge/go-1.24-00ADD8.svg" alt="Go 1.24">
@@ -161,11 +161,11 @@ automem team    # 团队共享记忆 —— 需要 automem cloud（付费层）
 
 <h2><img src="https://api.iconify.design/tabler:currency-dollar.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 定价</h2>
 
-本地底座**永久免费且开源（MIT）** —— 捕获、召回、统计、Agent 接入全部离线运行、无需账号。商业层只做本地底座刻意不免费做的那一件事：让数据离开你的机器。
+本地底座**永久免费且开源（Apache-2.0）** —— 捕获、召回、统计、Agent 接入全部离线运行、无需账号。商业层只做本地底座刻意不免费做的那一件事：让数据离开你的机器。
 
 | 层级 | 价格 | 内容 |
 |---|---|---|
-| **本地 Local** | 免费 · MIT | 单个离线二进制：捕获、召回、统计、为 Claude Code + Aider 做 `automem install`。无账号、无密钥、无网络。 |
+| **本地 Local** | 免费 · Apache-2.0 | 单个离线二进制：捕获、召回、统计、为 Claude Code + Aider 做 `automem install`。无账号、无密钥、无网络。 |
 | **同步 Sync** | 付费 | 跨机器记忆同步（`automem sync`）—— 同一份存储，出现在你写代码的每台机器上。 |
 | **团队 Team** | **$8 / 席位 / 月** | 共享团队作用域 + 跨机器同步 + 审计日志（`automem team`）。为整个团队的决策、坑点、约定提供同一个记忆层。 |
 
@@ -187,6 +187,6 @@ automem team    # 团队共享记忆 —— 需要 automem cloud（付费层）
 
 <h2><img src="https://api.iconify.design/tabler:license.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 许可证</h2>
 
-基于 [MIT 许可证](./LICENSE)发布。
+基于 [Apache 2.0 许可证](./LICENSE)发布。
 
-<p align="center"><sub><a href="./LICENSE">MIT</a> © 2026 SuperMarioYL</sub></p>
+<p align="center"><sub><a href="./LICENSE">Apache-2.0</a> © 2026 SuperMarioYL</sub></p>

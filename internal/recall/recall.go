@@ -142,6 +142,13 @@ func lexicalOverlap(qTokens map[string]int, r store.Record) float64 {
 			tagSet[tok] = struct{}{}
 		}
 	}
+	// Treat the record's cwd segments as path-weighted matchable tokens too,
+	// so a recall query derived from the session cwd (the Claude Code
+	// SessionStart hook path, which has no plain-text prompt) surfaces records
+	// captured in the same project — the intent of cross-session memory.
+	for tok := range tokenSet(r.Cwd) {
+		tagSet[tok] = struct{}{}
+	}
 
 	var hits float64
 	var qTotal float64

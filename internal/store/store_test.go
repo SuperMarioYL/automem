@@ -1,8 +1,10 @@
 package store
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 )
 
@@ -153,16 +155,81 @@ func TestRewriteIsAtomicNoTempLeft(t *testing.T) {
 	if _, err := s.MarkInjected([]string{a.ID}); err != nil {
 		t.Fatalf("MarkInjected: %v", err)
 	}
-	// No leftover temp files in the store dir.
+	// No leftover temp files in the store dir. The sidecar store.lock is
+	// expected (held by Append/MarkInjected) and is not a rewrite artifact.
 	entries, err := os.ReadDir(filepath.Dir(s.Path()))
 	if err != nil {
 		t.Fatalf("ReadDir: %v", err)
 	}
 	for _, e := range entries {
-		if filepath.Ext(e.Name()) == ".tmp" || filepath.Base(e.Name()) != "store.jsonl" {
-			if e.Name() != "store.jsonl" {
-				t.Errorf("unexpected leftover file after atomic rewrite: %s", e.Name())
+		name := e.Name()
+		if name == storeFileName || name == lockFileName {
+			continue
+		}
+		if filepath.Ext(name) == ".tmp" {
+			t.Errorf("unexpected leftover temp file after atomic rewrite: %s", name)
+		}
+	}
+}
+
+// TestConcurrentAppendAndMarkInjectedPreservesAllRecords is the regression guard
+// for fix-markinjected-rewrite-race: without the sidecar flock, a MarkInjected
+// rewrite (temp+rename) silently clobbers any Append that lands in the
+// Load→rename window, dropping freshly captured records. With the flock the
+// read-modify-write is atomic w.r.t. appends, so every concurrent Append
+// survives.
+func TestConcurrentAppendAndMarkInjectedPreservesAllRecords(t *testing.T) {
+	s := newTempStore(t)
+	seed, err := s.Append(Record{Summary: "seed"})
+	if err != nil {
+		t.Fatalf("seed Append: %v", err)
+	}
+
+	const N = 60
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var errs []string
+	recordErr := func(stage string, err error) {
+		mu.Lock()
+		errs = append(errs, fmt.Sprintf("%s: %v", stage, err))
+		mu.Unlock()
+	}
+
+	for i := 0; i < N; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			if _, err := s.Append(Record{Summary: fmt.Sprintf("append %d", i)}); err != nil {
+				recordErr("Append", err)
 			}
+		}(i)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := s.MarkInjected([]string{seed.ID}); err != nil {
+				recordErr("MarkInjected", err)
+			}
+		}()
+	}
+	wg.Wait()
+
+	if len(errs) > 0 {
+		t.Fatalf("concurrent ops errored: %v", errs)
+	}
+	got, err := s.Count()
+	if err != nil {
+		t.Fatalf("Count: %v", err)
+	}
+	if want := 1 + N; got != want {
+		t.Errorf("concurrent rewrite clobbered appends: got %d records, want %d (race dropped %d)", got, want, want-got)
+	}
+
+	// The seed's Injected counter must reflect every successful mark: N bumps,
+	// none lost to a rename race.
+	out, _ := s.Load()
+	for _, r := range out {
+		if r.ID == seed.ID && r.Injected != N {
+			t.Errorf("seed Injected = %d, want %d (a concurrent recall lost a bump)", r.Injected, N)
 		}
 	}
 }

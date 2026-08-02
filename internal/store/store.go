@@ -47,8 +47,11 @@ const DefaultDirName = ".automem"
 const storeFileName = "store.jsonl"
 
 // Store is a handle to one JSONL memory file. It holds no open descriptors and
-// no in-memory cache — every method opens, works, and closes, so concurrent
-// hook invocations from different agent processes never fight over a lock.
+// no in-memory cache — every method opens, works, and closes. The
+// read-modify-write in MarkInjected and the append in Append serialize on a
+// sidecar advisory flock (see withLock), so concurrent hook invocations from
+// different agent processes take turns rather than clobbering each other's
+// writes — a concurrent capture is no longer dropped by a MarkInjected rename.
 type Store struct {
 	path string
 }
@@ -93,6 +96,38 @@ func OpenDefault() (*Store, error) {
 // Path returns the absolute path of the backing JSONL file.
 func (s *Store) Path() string { return s.path }
 
+// lockFileName is the sidecar flock file next to store.jsonl. It is separate
+// from the data file so flocking never risks corrupting the store and so the
+// lock is independent of the atomic temp+rename in rewrite.
+const lockFileName = "store.lock"
+
+// lockPath returns the absolute path of the sidecar lock file.
+func (s *Store) lockPath() string {
+	return filepath.Join(filepath.Dir(s.path), lockFileName)
+}
+
+// withLock holds an exclusive advisory flock on the sidecar lock file for the
+// duration of fn. It makes Append's write and MarkInjected's read-modify-write
+// atomic w.r.t. each other: a concurrent capture can no longer be silently
+// clobbered by a MarkInjected rename (temp+rename), and two concurrent recalls
+// can no longer lose an Injected bump. The lock is process- and fd-scoped
+// (advisory flock), blocking, and held only for the brief write /
+// Load+rewrite — fine because the critical sections are short and the store is
+// small. On non-unix platforms the lock is a no-op (those platforms aren't
+// supported; O_APPEND's line-atomicity still prevents interleaved lines but not
+// rewrite races there).
+func (s *Store) withLock(fn func() error) error {
+	f, err := os.OpenFile(s.lockPath(), os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return fmt.Errorf("store: open lock: %w", err)
+	}
+	defer f.Close()
+	if err := flockExclusive(f); err != nil {
+		return fmt.Errorf("store: acquire lock: %w", err)
+	}
+	return fn()
+}
+
 // entropySource is the ULID entropy reader. It is a package var so tests can
 // make ID generation deterministic; production uses crypto-seeded monotonic
 // entropy for collision-free, sortable IDs.
@@ -125,14 +160,20 @@ func (s *Store) Append(r Record) (Record, error) {
 	}
 	line = append(line, '\n')
 
-	f, err := os.OpenFile(s.path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
-	if err != nil {
-		return Record{}, fmt.Errorf("store: open for append: %w", err)
-	}
-	defer f.Close()
-
-	if _, err := f.Write(line); err != nil {
-		return Record{}, fmt.Errorf("store: append: %w", err)
+	// Hold the sidecar flock across the append so a concurrent MarkInjected
+	// rewrite (temp+rename) can't drop this line in the Load→rename window.
+	if err := s.withLock(func() error {
+		f, err := os.OpenFile(s.path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
+		if err != nil {
+			return fmt.Errorf("store: open for append: %w", err)
+		}
+		defer f.Close()
+		if _, err := f.Write(line); err != nil {
+			return fmt.Errorf("store: append: %w", err)
+		}
+		return nil
+	}); err != nil {
+		return Record{}, err
 	}
 	return r, nil
 }
@@ -196,22 +237,28 @@ func (s *Store) MarkInjected(ids []string) (int, error) {
 		want[id] = struct{}{}
 	}
 
-	records, err := s.Load()
-	if err != nil {
-		return 0, err
-	}
-
-	bumped := 0
-	for i := range records {
-		if _, ok := want[records[i].ID]; ok {
-			records[i].Injected++
-			bumped++
+	var bumped int
+	// Hold the sidecar flock across Load+rewrite so the read-modify-write is
+	// atomic w.r.t. concurrent Appends and other MarkInjecteds — otherwise the
+	// temp+rename in rewrite silently clobbers a concurrent writer's line (a
+	// freshly captured record, or another recall's Injected bump) in the
+	// Load→rename window.
+	if err := s.withLock(func() error {
+		records, err := s.Load()
+		if err != nil {
+			return err
 		}
-	}
-	if bumped == 0 {
-		return 0, nil
-	}
-	if err := s.rewrite(records); err != nil {
+		for i := range records {
+			if _, ok := want[records[i].ID]; ok {
+				records[i].Injected++
+				bumped++
+			}
+		}
+		if bumped == 0 {
+			return nil
+		}
+		return s.rewrite(records)
+	}); err != nil {
 		return 0, err
 	}
 	return bumped, nil

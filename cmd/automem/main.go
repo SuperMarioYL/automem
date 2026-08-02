@@ -10,6 +10,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -76,9 +78,46 @@ func openStore() (*store.Store, error) {
 	return store.OpenDefault()
 }
 
+// hookPayload models the JSON metadata object Claude Code pipes to its hook
+// commands on stdin (session_id, transcript_path, cwd, hook_event_name). There
+// is no plain-text prompt on this stream — SessionStart fires before the user
+// submits one — so capture/recall must parse it rather than read the blob as
+// text. Only the fields automem reads are modeled; unknown fields are ignored
+// by the JSON decoder.
+type hookPayload struct {
+	SessionID      string `json:"session_id"`
+	TranscriptPath string `json:"transcript_path"`
+	Cwd            string `json:"cwd"`
+	HookEventName  string `json:"hook_event_name"`
+}
+
+// parseHookPayload returns the parsed Claude Code hook payload and ok=true when
+// stdin is a JSON object carrying at least one of the known hook fields. A
+// plain-text query or transcript (e.g. a human piping a prompt in) is not JSON
+// or carries no hook fields, so ok=false and the caller falls back to treating
+// the bytes as text — keeping the pre-v0.2.0 stdin behaviour for direct CLI use.
+func parseHookPayload(data []byte) (hookPayload, bool) {
+	trimmed := bytes.TrimSpace(data)
+	if len(trimmed) == 0 || trimmed[0] != '{' {
+		return hookPayload{}, false
+	}
+	var p hookPayload
+	if err := json.Unmarshal(trimmed, &p); err != nil {
+		return hookPayload{}, false
+	}
+	// Require at least one recognized field so a hand-piped "{}" or an
+	// unrelated JSON object doesn't hijack capture/recall.
+	if p.SessionID == "" && p.TranscriptPath == "" && p.Cwd == "" && p.HookEventName == "" {
+		return hookPayload{}, false
+	}
+	return p, true
+}
+
 // readTranscript returns the transcript source for capture: the named file if
-// given, otherwise stdin. The caller closes nothing — stdin isn't ours to close
-// and files are wrapped to close on their own.
+// given, otherwise stdin. When stdin is Claude Code's JSON hook payload, the
+// real transcript lives at its `transcript_path` field — read that file instead
+// of parsing the JSON blob as a roleless transcript. The caller closes nothing —
+// stdin isn't ours to close and files are wrapped to close on their own.
 func readTranscript(cmd *cobra.Command, args []string) (io.Reader, func() error, error) {
 	if len(args) == 1 && args[0] != "-" {
 		f, err := os.Open(args[0])
@@ -87,7 +126,20 @@ func readTranscript(cmd *cobra.Command, args []string) (io.Reader, func() error,
 		}
 		return f, f.Close, nil
 	}
-	return cmd.InOrStdin(), func() error { return nil }, nil
+	data, err := io.ReadAll(cmd.InOrStdin())
+	if err != nil {
+		return nil, nil, fmt.Errorf("read transcript from stdin: %w", err)
+	}
+	// Claude Code's Stop hook pipes a JSON metadata object on stdin; the actual
+	// session transcript is the file at transcript_path.
+	if p, ok := parseHookPayload(data); ok && p.TranscriptPath != "" {
+		f, err := os.Open(p.TranscriptPath)
+		if err != nil {
+			return nil, nil, fmt.Errorf("open transcript from hook payload %s: %w", p.TranscriptPath, err)
+		}
+		return f, f.Close, nil
+	}
+	return bytes.NewReader(data), func() error { return nil }, nil
 }
 
 func newCaptureCmd() *cobra.Command {
@@ -201,7 +253,11 @@ func newRecallCmd() *cobra.Command {
 }
 
 // recallQuery returns the recall query from the positional arg, or from stdin
-// when no arg is given (so a hook can pipe the incoming prompt in).
+// when no arg is given (so a hook can pipe the incoming prompt in). When stdin
+// is Claude Code's JSON hook payload, there is no plain-text prompt
+// (SessionStart fires before the user submits one) — fall back to the payload's
+// `cwd` so recall surfaces records captured in the same project (recall matches
+// the cwd tokens against each record's Cwd via recall.lexicalOverlap).
 func recallQuery(cmd *cobra.Command, args []string) (string, error) {
 	if len(args) == 1 && args[0] != "-" {
 		return args[0], nil
@@ -209,6 +265,9 @@ func recallQuery(cmd *cobra.Command, args []string) (string, error) {
 	data, err := io.ReadAll(cmd.InOrStdin())
 	if err != nil {
 		return "", fmt.Errorf("read query from stdin: %w", err)
+	}
+	if p, ok := parseHookPayload(data); ok && p.Cwd != "" {
+		return p.Cwd, nil
 	}
 	return string(data), nil
 }
