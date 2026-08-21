@@ -33,7 +33,7 @@ const paidTierHint = "requires automem cloud — see lei6393.com/automem"
 // version is the semantic version of the binary. It is overridden at release
 // time via -ldflags "-X main.version=<tag>"; the default mirrors the VERSION
 // file so a `go build` from source still reports something sensible.
-var version = "0.1.0"
+var version = "0.3.0"
 
 func main() {
 	if err := newRootCmd().Execute(); err != nil {

@@ -122,6 +122,54 @@ func TestExtractEmptyTranscriptDoesNotPanic(t *testing.T) {
 	}
 }
 
+func TestExtractPathsAbsoluteAndHome(t *testing.T) {
+	// Regression for the pathLike bug: absolute (/…) and home (~/…) paths
+	// were silently dropped because the capture could not begin with / or ~.
+	// Claude Code tool_use lines carry absolute file_path values, so this was
+	// starving recall's strongest (pathTagWeight=2.0) signal in the primary
+	// integration.
+	cases := []struct {
+		name string
+		line string
+		want string
+	}{
+		{
+			name: "absolute path in JSON file_path",
+			line: `{"file_path":"/Users/yulei/proj/auth.go"}`,
+			want: "/Users/yulei/proj/auth.go",
+		},
+		{
+			name: "home-relative path",
+			line: "edited ~/projects/auth.go just now",
+			want: "~/projects/auth.go",
+		},
+		{
+			name: "absolute path under /home",
+			line: "see /home/yulei/proj/server.go",
+			want: "/home/yulei/proj/server.go",
+		},
+		{
+			name: "bare leading slash without segments is not a path",
+			line: "see / alone",
+			want: "",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := extractPaths(c.line)
+			if c.want == "" {
+				if len(got) != 0 {
+					t.Errorf("extractPaths(%q): expected no paths, got %v", c.line, got)
+				}
+				return
+			}
+			if !containsAll(got, c.want) {
+				t.Errorf("extractPaths(%q): want %q in %v", c.line, c.want, got)
+			}
+		})
+	}
+}
+
 // --- helpers ---
 
 func containsAll(haystack []string, wants ...string) bool {

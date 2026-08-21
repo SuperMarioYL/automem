@@ -157,8 +157,11 @@ var roleLine = regexp.MustCompile(`^\s*(user|human|assistant|ai|system)\s*:\s*(.
 var diffStatLine = regexp.MustCompile(`\d+ files? changed(?:, \d+ insertions?\(\+\))?(?:, \d+ deletions?\(-\))?`)
 
 // pathLike matches path-ish tokens: something with a slash or a known code
-// extension. Deliberately conservative to avoid tagging prose.
-var pathLike = regexp.MustCompile(`(?:^|[\s"'` + "`" + `(])((?:[\w.-]+/)+[\w.-]+|[\w.-]+\.` + knownExtAlternation + `)`)
+// extension, including absolute (/…) and home (~/…) paths. The optional
+// leading (?:~/|/)? lets a capture begin at a path root so Claude-Code-style
+// tool_use file paths are not silently dropped. The delimiter anchor
+// (^|[\s"'`(]) is kept so prose is still not tagged.
+var pathLike = regexp.MustCompile(`(?:^|[\s"'` + "`" + `(])((?:~/|/)?(?:[\w.-]+/)+[\w.-]+|[\w.-]+\.` + knownExtAlternation + `)`)
 
 // ParseTranscript reads a plain-text transcript from r and structures it. The
 // format is line-oriented and forgiving:
