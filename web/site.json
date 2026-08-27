@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "name": "automem",
+  "github": "https://github.com/SuperMarioYL/automem",
+  "host": "automem.lei6393.com",
+  "lang": { "primary": "zh", "toggle": true },
+  "accent": ["#e8a44a"],
+  "hero": {
+    "eyebrow": { "zh": "本地 · 无账号 · 单二进制", "en": "Offline · No account · One binary" },
+    "headline": {
+      "zh": "你的编码 agent\n跨重启还记得上一次",
+      "en": "Your coding agent\nremembers across restarts"
+    },
+    "sub": {
+      "zh": "你工作时自动捕获每次会话，下次开始时自动回忆最相关的内容 — 按你提过的词与时间远近排序。一个二进制，无需账号和密钥。",
+      "en": "Captures each session as you work, then recalls the most relevant bits when the next one starts — ranked by what you mentioned and how recent. One binary, no account, no key."
+    },
+    "command": "automem install",
+    "cta": { "zh": "开始使用", "en": "Get started" },
+    "ctaGithub": { "zh": "在 GitHub 查看", "en": "View on GitHub" },
+    "scroll": { "zh": "了解原理", "en": "See how" }
+  },
+  "advantages": [
+    {
+      "title": { "zh": "零配置，全程离线", "en": "Zero setup, fully offline" },
+      "body": {
+        "zh": "给 agent 加跨会话记忆，过去要挑一个记忆服务、搭向量库、注册账号、申请密钥。automem 把这些全去掉 — 一个二进制，一条命令，无需账号和密钥，全程离线。",
+        "en": "Giving an agent cross-session memory used to mean picking a memory service, standing up a vector DB, creating an account, and getting a key. automem strips all of it away — one binary, one command, no account, no key, fully offline."
+      },
+      "chips": ["› 全程离线 · 无密钥", "› 无需账号 / 向量库"]
+    },
+    {
+      "title": { "zh": "自动接入你的 agent", "en": "Auto-connects your agents" },
+      "body": {
+        "zh": "一条命令接好 Claude Code 和 Aider — 会话结束自动捕获，新会话开始自动回忆，全程无需手动配置。",
+        "en": "One command sets up Claude Code and Aider — your session is captured on exit and recalled when the next one starts, with no manual config."
+      },
+      "chips": ["› Claude Code · Aider", "› 退出即捕获，开启即回忆"]
+    },
+    {
+      "title": { "zh": "看得见它真的在用", "en": "Proof it's actually used" },
+      "body": {
+        "zh": "记忆工具不该是黑箱。内置计数器显示已存储与已注入次数 — 注入率一目了然，你知道回忆真的发生了。",
+        "en": "A memory tool shouldn't be a black box. A built-in counter shows stored vs injected — the injection rate is right there, so you know the recall actually happened."
+      },
+      "chips": ["› stored vs injected", "› 注入率一目了然"]
+    },
+    {
+      "title": { "zh": "留在你的机器上", "en": "Stays on your machine" },
+      "body": {
+        "zh": "会话之间没有任何后台进程在跑 — 它被唤醒、做完即退出。你的记忆只留在一个本地文件里，从不离开本机。",
+        "en": "Nothing runs in the background between sessions — it wakes, does its job, and exits. Your memory lives in one local file and never leaves your machine."
+      },
+      "chips": ["› 一个本地文件", "› 从不离开本机"]
+    }
+  ],
+  "scene": { "kind": "hub-nodes", "nodes": ["Claude Code", "Aider"] },
+  "cta": {
+    "headline": { "zh": "离线、无密钥的跨会话记忆", "en": "Offline, keyless cross-session memory" },
+    "sub": {
+      "zh": "本地永久免费、Apache-2.0 开源。记忆只留在你自己的机器上。",
+      "en": "Free and open source (Apache-2.0) locally, forever. Your memory stays on your own machine."
+    },
+    "button": { "zh": "在 GitHub 上开始", "en": "Get started on GitHub" }
+  },
+  "footer": {
+    "tag": { "zh": "让任意编码 agent 跨重启记得上一次的离线记忆层", "en": "The offline memory layer that makes any coding agent remember across restarts" }
+  }
+}
