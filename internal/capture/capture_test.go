@@ -32,6 +32,36 @@ system: done
 	}
 }
 
+// TestParseTranscriptCapitalizedRoles guards the case-insensitivity fix: the
+// shipped onboarding transcript (examples/session.transcript) and the demo
+// source use capitalized "User:"/"Assistant:" prefixes — the natural form a
+// human writes. Before the (?i) flag these lines did not match roleLine, so
+// sawRole stayed false and the roleless fallback collapsed the entire
+// transcript (user AND assistant turns) into a single user message. After the
+// fix, capitalized roles parse just like the lowercase variant.
+func TestParseTranscriptCapitalizedRoles(t *testing.T) {
+	raw := `User: refactor auth.py to use dataclasses
+Assistant: Done. Converted the models in auth.py to @dataclass.
+User: keep the old constructor working`
+
+	tr, err := ParseTranscript(strings.NewReader(raw))
+	if err != nil {
+		t.Fatalf("ParseTranscript: %v", err)
+	}
+	if len(tr.UserMessages) != 2 {
+		t.Fatalf("expected 2 user messages for capitalized roles, got %d: %v", len(tr.UserMessages), tr.UserMessages)
+	}
+	if !strings.Contains(tr.UserMessages[0], "refactor auth.py") {
+		t.Errorf("first user message wrong: %q", tr.UserMessages[0])
+	}
+	if !strings.Contains(tr.UserMessages[1], "keep the old constructor") {
+		t.Errorf("second user message wrong: %q", tr.UserMessages[1])
+	}
+	if !containsAll(tr.Paths, "auth.py") {
+		t.Errorf("paths not extracted: %v", tr.Paths)
+	}
+}
+
 func TestParseTranscriptRolelessIsOneUserMessage(t *testing.T) {
 	tr, err := ParseTranscript(strings.NewReader("fix the login bug in auth.go"))
 	if err != nil {

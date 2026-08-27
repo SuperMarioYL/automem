@@ -222,21 +222,24 @@ func mergeAutomemHooks(settings map[string]any, binPath string) error {
 
 // stripAutomemEntries returns the hook entries for one event with every
 // automem-managed entry removed (identified by claudeMarker in a hook command),
-// leaving the user's own hooks in place. It tolerates any shape the raw JSON
-// might hold and simply drops entries it can't understand as automem's.
-func stripAutomemEntries(raw any) []hookEntry {
+// leaving the user's own hooks in place. Foreign entries are kept as their raw
+// decoded form (map[string]any) rather than round-tripped through the typed
+// hookEntry struct, so unknown fields on a user's own hook — e.g. "timeout" on a
+// command or a future field on an entry — survive the merge untouched. Only the
+// freshly-constructed automem entry (appended by the caller) needs the typed
+// shape; round-tripping foreign entries through a struct that models just
+// matcher+hooks would silently delete every other key.
+func stripAutomemEntries(raw any) []any {
 	arr, ok := raw.([]any)
 	if !ok {
 		return nil
 	}
-	var kept []hookEntry
+	var kept []any
 	for _, item := range arr {
 		if entryIsAutomem(item) {
 			continue
 		}
-		if e, ok := decodeHookEntry(item); ok {
-			kept = append(kept, e)
-		}
+		kept = append(kept, item)
 	}
 	return kept
 }
@@ -247,27 +250,12 @@ func entryIsAutomem(item any) bool {
 	return bytes.Contains(mustJSON(item), []byte(claudeMarker))
 }
 
-// decodeHookEntry converts a raw JSON hook entry into a typed hookEntry,
-// preserving the matcher and every command. Entries it can't decode are dropped
-// from the typed view but — because they were foreign and non-automem — this
-// only happens for genuinely malformed data; well-formed foreign hooks decode
-// cleanly and are preserved.
-func decodeHookEntry(item any) (hookEntry, bool) {
-	data, err := json.Marshal(item)
-	if err != nil {
-		return hookEntry{}, false
-	}
-	var e hookEntry
-	if err := json.Unmarshal(data, &e); err != nil {
-		return hookEntry{}, false
-	}
-	return e, true
-}
-
-// normalizeHookEntries round-trips the typed entries back through JSON into the
+// normalizeHookEntries round-trips the entries back through JSON into the
 // generic []any / map[string]any representation, so the value stored in the
-// settings map has the same concrete types a fresh file read would produce.
-func normalizeHookEntries(entries []hookEntry) (any, error) {
+// settings map has the same concrete types a fresh file read would produce —
+// whether an entry is a raw foreign map (kept verbatim, unknown fields intact)
+// or the typed automem entry the caller appends.
+func normalizeHookEntries(entries []any) (any, error) {
 	data, err := json.Marshal(entries)
 	if err != nil {
 		return nil, fmt.Errorf("install: encode hook entries: %w", err)

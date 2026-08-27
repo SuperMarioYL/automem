@@ -104,6 +104,77 @@ func TestClaudeWirePreservesForeignConfig(t *testing.T) {
 	readSettings(t, path)
 }
 
+// TestClaudeWirePreservesForeignHookFields is the regression for the
+// stripAutomemEntries data-loss bug: foreign hook entries were round-tripped
+// through the typed hookEntry/hookSpec structs, which model only matcher+hooks
+// and type+command, so every other field (e.g. "note" on an entry, "timeout" on
+// a command) was silently deleted from settings.json on the next install. The
+// fix keeps foreign entries as raw maps, so unknown keys pass through untouched.
+func TestClaudeWirePreservesForeignHookFields(t *testing.T) {
+	home := t.TempDir()
+	body := `{
+	  "hooks": {
+	    "SessionStart": [
+	      {
+	        "matcher": "*",
+	        "note": "my custom hook",
+	        "hooks": [
+	          {"type": "command", "command": "echo hi", "timeout": 30}
+	        ]
+	      }
+	    ]
+	  }
+	}`
+	path := writeClaudeConfig(t, home, body)
+	cfg := Config{Home: home, BinPath: "/opt/automem"}
+
+	if res := (claudeCodeInstaller{}).Wire(cfg); res.Status != StatusWired {
+		t.Fatalf("Wire status = %v (%v)", res.Status, res.Err)
+	}
+
+	s := readSettings(t, path)
+	hooks, ok := s["hooks"].(map[string]any)
+	if !ok {
+		t.Fatalf("hooks missing/not an object: %#v", s["hooks"])
+	}
+	entries, ok := hooks["SessionStart"].([]any)
+	if !ok {
+		t.Fatalf("SessionStart hooks not an array: %#v", hooks["SessionStart"])
+	}
+
+	// The foreign entry survives with all its fields; the automem entry is
+	// appended after it.
+	var foreign map[string]any
+	for _, e := range entries {
+		if entryIsAutomem(e) {
+			continue
+		}
+		em, ok := e.(map[string]any)
+		if !ok {
+			t.Fatalf("foreign entry not an object: %#v", e)
+		}
+		foreign = em
+		break
+	}
+	if foreign == nil {
+		t.Fatalf("foreign hook entry missing after merge: %#v", entries)
+	}
+	if foreign["note"] != "my custom hook" {
+		t.Errorf("foreign entry field 'note' was stripped: %#v", foreign)
+	}
+	cmds, ok := foreign["hooks"].([]any)
+	if !ok || len(cmds) == 0 {
+		t.Fatalf("foreign hook commands missing: %#v", foreign)
+	}
+	cmd, ok := cmds[0].(map[string]any)
+	if !ok {
+		t.Fatalf("foreign command not an object: %#v", cmds[0])
+	}
+	if cmd["timeout"] != float64(30) {
+		t.Errorf("foreign command field 'timeout' was stripped: %#v", cmd)
+	}
+}
+
 // TestClaudeWireIdempotent leaves an existing automem wiring untouched (no Force).
 func TestClaudeWireIdempotent(t *testing.T) {
 	home := t.TempDir()

@@ -151,7 +151,11 @@ func buildTags(t Transcript) []string {
 // roleLine matches a "role: message" prefix at the start of a transcript line.
 // Recognized roles: user/human (kept), assistant/ai/system (ignored for the
 // user-message extraction but their bodies are still scanned for paths).
-var roleLine = regexp.MustCompile(`^\s*(user|human|assistant|ai|system)\s*:\s*(.*)$`)
+// Case-insensitive so the capitalized "User:"/"Assistant:" a human naturally
+// writes parses the same as the lowercase "user:"/"assistant:" the tests use;
+// without (?i) those lines never match, sawRole stays false, and the roleless
+// fallback collapses the whole transcript into one user message.
+var roleLine = regexp.MustCompile(`(?i)^\s*(user|human|assistant|ai|system)\s*:\s*(.*)$`)
 
 // diffStatLine matches a git-style shortstat line anywhere in the transcript.
 var diffStatLine = regexp.MustCompile(`\d+ files? changed(?:, \d+ insertions?\(\+\))?(?:, \d+ deletions?\(-\))?`)
