@@ -1,69 +1,215 @@
 {
-  "schema": 1,
+  "schema": 3,
   "name": "automem",
   "github": "https://github.com/SuperMarioYL/automem",
   "host": "automem.lei6393.com",
-  "lang": { "primary": "zh", "toggle": true },
-  "accent": ["#e8a44a"],
+  "palette": "auto",
+  "lang": {
+    "primary": "en",
+    "toggle": true
+  },
+  "meta": {
+    "visual_style": "neon-particle",
+    "demo_source": "docs/demo-results.json"
+  },
   "hero": {
-    "eyebrow": { "zh": "本地 · 无账号 · 单二进制", "en": "Offline · No account · One binary" },
     "headline": {
-      "zh": "你的编码 agent\n跨重启还记得上一次",
-      "en": "Your coding agent\nremembers across restarts"
+      "en": "Carry useful session context into the next restart.",
+      "zh": "让有用的会话上下文延续到下次启动。"
     },
     "sub": {
-      "zh": "你工作时自动捕获每次会话，下次开始时自动回忆最相关的内容 — 按你提过的词与时间远近排序。一个二进制，无需账号和密钥。",
-      "en": "Captures each session as you work, then recalls the most relevant bits when the next one starts — ranked by what you mentioned and how recent. One binary, no account, no key."
+      "en": "automem extracts user messages and file references from a session transcript, stores them locally, and retrieves relevant summaries through a short-lived CLI.",
+      "zh": "automem 从会话记录提取用户消息和文件引用，在本地保存，再通过短生命周期 CLI 检索相关摘要。"
     },
-    "command": "automem install",
-    "cta": { "zh": "开始使用", "en": "Get started" },
-    "ctaGithub": { "zh": "在 GitHub 查看", "en": "View on GitHub" },
-    "scroll": { "zh": "了解原理", "en": "See how" }
+    "href": "#quickstart"
   },
   "advantages": [
     {
-      "title": { "zh": "零配置，全程离线", "en": "Zero setup, fully offline" },
-      "body": {
-        "zh": "给 agent 加跨会话记忆，过去要挑一个记忆服务、搭向量库、注册账号、申请密钥。automem 把这些全去掉 — 一个二进制，一条命令，无需账号和密钥，全程离线。",
-        "en": "Giving an agent cross-session memory used to mean picking a memory service, standing up a vector DB, creating an account, and getting a key. automem strips all of it away — one binary, one command, no account, no key, fully offline."
+      "title": {
+        "en": "Offline local memory",
+        "zh": "本地离线记忆"
       },
-      "chips": ["› 全程离线 · 无密钥", "› 无需账号 / 向量库"]
+      "body": {
+        "en": "Capture and recall need no key or daemon.",
+        "zh": "捕获与召回无需密钥或守护进程。"
+      }
     },
     {
-      "title": { "zh": "自动接入你的 agent", "en": "Auto-connects your agents" },
-      "body": {
-        "zh": "一条命令接好 Claude Code 和 Aider — 会话结束自动捕获，新会话开始自动回忆，全程无需手动配置。",
-        "en": "One command sets up Claude Code and Aider — your session is captured on exit and recalled when the next one starts, with no manual config."
+      "title": {
+        "en": "Inspectable summaries",
+        "zh": "可检查的摘要"
       },
-      "chips": ["› Claude Code · Aider", "› 退出即捕获，开启即回忆"]
+      "body": {
+        "en": "Extracted text and paths remain in JSONL.",
+        "zh": "抽取的文字与路径保存在 JSONL 中。"
+      }
     },
     {
-      "title": { "zh": "看得见它真的在用", "en": "Proof it's actually used" },
-      "body": {
-        "zh": "记忆工具不该是黑箱。内置计数器显示已存储与已注入次数 — 注入率一目了然，你知道回忆真的发生了。",
-        "en": "A memory tool shouldn't be a black box. A built-in counter shows stored vs injected — the injection rate is right there, so you know the recall actually happened."
+      "title": {
+        "en": "Preview integration",
+        "zh": "预览集成修改"
       },
-      "chips": ["› stored vs injected", "› 注入率一目了然"]
-    },
-    {
-      "title": { "zh": "留在你的机器上", "en": "Stays on your machine" },
       "body": {
-        "zh": "会话之间没有任何后台进程在跑 — 它被唤醒、做完即退出。你的记忆只留在一个本地文件里，从不离开本机。",
-        "en": "Nothing runs in the background between sessions — it wakes, does its job, and exits. Your memory lives in one local file and never leaves your machine."
-      },
-      "chips": ["› 一个本地文件", "› 从不离开本机"]
+        "en": "install --dry-run shows hook or wrapper changes.",
+        "zh": "install --dry-run 展示 hook 或包装器修改。"
+      }
     }
   ],
-  "scene": { "kind": "hub-nodes", "nodes": ["Claude Code", "Aider"] },
-  "cta": {
-    "headline": { "zh": "离线、无密钥的跨会话记忆", "en": "Offline, keyless cross-session memory" },
-    "sub": {
-      "zh": "本地永久免费、Apache-2.0 开源。记忆只留在你自己的机器上。",
-      "en": "Free and open source (Apache-2.0) locally, forever. Your memory stays on your own machine."
+  "demo": {
+    "title": {
+      "en": "Run it on a complete example",
+      "zh": "运行完整示例"
     },
-    "button": { "zh": "在 GitHub 上开始", "en": "Get started on GitHub" }
+    "note": {
+      "en": "Capture examples/session.transcript, recall its constructor decision and inspect counters in a temporary store. Python 3 drives the isolated example.",
+      "zh": "在临时库捕获 examples/session.transcript，召回构造函数决策并检查计数；示例由 Python 3 驱动。"
+    },
+    "source": "https://github.com/SuperMarioYL/automem/blob/main/docs/demo-results.json",
+    "steps": [
+      {
+        "label": "Recorded run",
+        "body": "Offline capture, lexical recall and stored/injected statistics using the bundled transcript in a temporary store; no agent hook is installed.",
+        "command": "python3 examples/presentation_demo.py",
+        "output": "# memory 1/1  (score 1.667)\nalso make sure the old constructor keeps working for callers we don't own\nrefactor auth.py to use dataclasses\nfiles: auth.py\n1 stored, 1 injected\n  injection rate: 100% (1 of 1 memories recalled at least once)\n  total injections: 1\n  by agent:\n    claude-code  1",
+        "image": "/assets/presentation/demo-0-light.svg",
+        "imageDark": "/assets/presentation/demo-0-dark.svg"
+      }
+    ]
   },
-  "footer": {
-    "tag": { "zh": "让任意编码 agent 跨重启记得上一次的离线记忆层", "en": "The offline memory layer that makes any coding agent remember across restarts" }
+  "quickstart": {
+    "title": {
+      "en": "Try it locally",
+      "zh": "本地上手"
+    },
+    "body": {
+      "en": "Capture examples/session.transcript, recall its constructor decision and inspect counters in a temporary store. Python 3 drives the isolated example.",
+      "zh": "在临时库捕获 examples/session.transcript，召回构造函数决策并检查计数；示例由 Python 3 驱动。"
+    },
+    "steps": [
+      {
+        "title": {
+          "en": "Install from source",
+          "zh": "从源码安装"
+        },
+        "code": "git clone https://github.com/SuperMarioYL/automem.git\ncd automem\ngo build ./cmd/automem"
+      },
+      {
+        "title": {
+          "en": "Run the included example",
+          "zh": "运行随仓示例"
+        },
+        "code": "python3 examples/presentation_demo.py"
+      }
+    ]
+  },
+  "limitations": [
+    {
+      "en": "Recall is lexical, not semantic embedding search. It scans the stored records and may miss paraphrases.",
+      "zh": "召回使用词汇匹配，不是语义嵌入检索；它扫描已有记录，可能漏掉改写表达。"
+    },
+    {
+      "en": "The injected counter records that recall surfaced a memory; it does not prove the model used it or improved its answer.",
+      "zh": "injected 计数表示 recall 输出过该记忆，不证明模型实际利用它或改善回答。"
+    },
+    {
+      "en": "The Aider wrapper is marked unverified in the source. sync and team are stubs, with no hosted backend provided here.",
+      "zh": "源码将 Aider 包装器标为未验证；sync 与 team 是占位命令，此处未提供托管后端。"
+    }
+  ],
+  "scene": {
+    "kind": "neon-graph",
+    "fallback": "/assets/presentation/scene-dark.svg",
+    "fallbackLight": "/assets/presentation/scene-light.svg"
+  },
+  "story": {
+    "intro": {
+      "title": {
+        "en": "A concrete task",
+        "zh": "从实际任务出发"
+      },
+      "body": {
+        "en": "Repeatedly pasting the same project decisions is tedious. Save the source transcript once and recall matching context when you need it; no embedding service or model request is needed for the local path.",
+        "zh": "反复粘贴同一项目决策很繁琐。保存会话后，在需要时召回匹配内容；本地流程无需嵌入服务或模型请求。"
+      }
+    },
+    "sections": [
+      {
+        "title": {
+          "en": "Follow the operation",
+          "zh": "处理过程"
+        },
+        "body": {
+          "en": "capture parses transcripts and extracts trailing user messages, paths and diff information into a JSONL store. recall ranks records by weighted lexical overlap and exponential recency decay, then optionally increments injected counters. install can write Claude Code hooks or an Aider wrapper that invoke the same CLI.",
+          "zh": "capture 解析会话，将末尾用户消息、路径及 diff 信息写入 JSONL。recall 按加权词汇重合与指数时间衰减排序，并可增加 injected 计数。install 可写入调用同一 CLI 的 Claude Code hook 或 Aider 包装器。"
+        },
+        "image": {
+          "light": "/assets/presentation/process-light.svg",
+          "dark": "/assets/presentation/process-dark.svg",
+          "alt": {
+            "en": "Follow the operation",
+            "zh": "处理过程"
+          }
+        }
+      },
+      {
+        "title": {
+          "en": "Inside automem",
+          "zh": "automem 的内部流程"
+        },
+        "body": {
+          "en": "capture parses transcripts and extracts trailing user messages, paths and diff information into a JSONL store. recall ranks records by weighted lexical overlap and exponential recency decay, then optionally increments injected counters. install can write Claude Code hooks or an Aider wrapper that invoke the same CLI.",
+          "zh": "capture 解析会话，将末尾用户消息、路径及 diff 信息写入 JSONL。recall 按加权词汇重合与指数时间衰减排序，并可增加 injected 计数。install 可写入调用同一 CLI 的 Claude Code hook 或 Aider 包装器。"
+        },
+        "image": {
+          "light": "/assets/presentation/architecture-light.svg",
+          "dark": "/assets/presentation/architecture-dark.svg",
+          "alt": {
+            "en": "Inside automem",
+            "zh": "automem 的内部流程"
+          }
+        }
+      },
+      {
+        "title": {
+          "en": "Connect the pieces",
+          "zh": "输入与输出"
+        },
+        "body": {
+          "en": "Choose the input and output route that matches your workflow. The local example below exercises the stated subset.",
+          "zh": "根据工作流选择输入与输出路径。本文本地示例验证其中明确说明的子流程。"
+        },
+        "image": {
+          "light": "/assets/presentation/integrations-light.svg",
+          "dark": "/assets/presentation/integrations-dark.svg",
+          "alt": {
+            "en": "Connect the pieces",
+            "zh": "输入与输出"
+          }
+        }
+      }
+    ],
+    "details": [
+      {
+        "title": {
+          "en": "Configuration",
+          "zh": "配置"
+        },
+        "body": {
+          "en": "AUTOMEM_DIR defaults to ~/.automem and owns store.jsonl. AUTOMEM_HOME redirects installation paths, while AUTOMEM_BIN selects the executable written into hooks. recall --top sets result count; --no-mark previews without updating counters. install --dry-run previews config edits. Review that preview before running install, which changes your agent configuration.",
+          "zh": "AUTOMEM_DIR 默认 ~/.automem，管理 store.jsonl。AUTOMEM_HOME 改变安装路径，AUTOMEM_BIN 指定写入 hook 的可执行文件。recall --top 设置返回数；--no-mark 只预览、不更新计数。install --dry-run 预览配置修改；确认预览后再运行会修改 Agent 配置的 install。"
+        }
+      },
+      {
+        "title": {
+          "en": "Further use",
+          "zh": "进一步使用"
+        },
+        "body": {
+          "en": "Run these commands from the repository root after installation. Replace paths for your own data.",
+          "zh": "安装后在仓库根目录运行以下命令；处理自己的数据时替换相应路径。"
+        },
+        "code": "go run ./cmd/automem capture --agent claude-code examples/session.transcript\ngo run ./cmd/automem recall --top 3 --no-mark \"auth.py constructor\"\ngo run ./cmd/automem stats\ngo run ./cmd/automem install --dry-run"
+      }
+    ]
   }
 }

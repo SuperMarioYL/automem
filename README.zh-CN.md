@@ -1,192 +1,131 @@
-<div align="right"><sub><a href="./README.md">English</a>&nbsp;&nbsp;⇄&nbsp;&nbsp;<b>简体中文</b></sub></div>
+[English](./README.md) · [Website](https://automem.lei6393.com) · [GitHub](https://github.com/SuperMarioYL/automem)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/hero-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="./assets/hero-light.svg">
-  <img src="./assets/hero-light.svg" width="880" alt="automem —— 让你的编码 Agent 跨会话记住上下文的离线记忆层">
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="./assets/presentation/hero-mobile-dark.svg">
+  <source media="(max-width: 600px)" srcset="./assets/presentation/hero-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/presentation/hero-dark.svg">
+  <img src="./assets/presentation/hero-light.svg" width="960" alt="Hero diagram">
 </picture>
 
-<p><sub>automem 是一个离线记忆层，让任何编码 Agent 在重启后依然记得上一次会话 —— 一个二进制，无向量数据库、无账号、无密钥。</sub></p>
+# automem
 
-<p align="center">
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-black.svg" alt="License: Apache-2.0"></a>
-  <a href="https://github.com/SuperMarioYL/automem/releases"><img src="https://img.shields.io/github/v/release/SuperMarioYL/automem?color=5E5CE6" alt="最新版本"></a>
-  <a href="https://github.com/SuperMarioYL/automem/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/SuperMarioYL/automem/ci.yml?branch=main&label=ci" alt="CI 状态"></a>
-  <img src="https://img.shields.io/badge/go-1.24-00ADD8.svg" alt="Go 1.24">
-  <img src="https://img.shields.io/badge/离线-无需联网-5E5CE6.svg" alt="离线">
-  <img src="https://img.shields.io/badge/多 Agent-Claude%20Code%20%2B%20Aider-10A37F.svg" alt="多 Agent">
-</p>
+**让有用的会话上下文延续到下次启动。**
 
-**你的编码 Agent 每次重启都从零开始 —— 你反复粘贴上下文、反复讲解代码库、反复复述两小时前刚定下的方案。`automem` 会捕获每次会话，并把相关内容注入到下一次会话里，让 Agent 从上次停下的地方继续。**
+automem 从会话记录提取用户消息和文件引用，在本地保存，再通过短生命周期 CLI 检索相关摘要。
 
-<h2><img src="https://api.iconify.design/tabler:topology-star-3.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 架构</h2>
+## 为什么需要它
+
+反复粘贴同一项目决策很繁琐。保存会话后，在需要时召回匹配内容；本地流程无需嵌入服务或模型请求。
+
+- **本地离线记忆** — 捕获与召回无需密钥或守护进程。
+- **可检查的摘要** — 抽取的文字与路径保存在 JSONL 中。
+- **预览集成修改** — install --dry-run 展示 hook 或包装器修改。
+
+## 架构
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/atlas-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="./assets/atlas-light.svg">
-  <img src="./assets/atlas-light.svg" width="880" alt="架构：Agent CLI 的 hook 调用 automem capture（Stop）与 recall（SessionStart），读写一个追加式 JSONL 存储；recall 把 top-K 记忆注回会话">
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="./assets/presentation/architecture-mobile-dark.svg">
+  <source media="(max-width: 600px)" srcset="./assets/presentation/architecture-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/presentation/architecture-dark.svg">
+  <img src="./assets/presentation/architecture-light.svg" width="960" alt="Architecture diagram">
 </picture>
 
-一个二进制、一个追加式文件，无守护进程、无网络、无账号。`automem` 二进制是短命的 —— Agent 自己的进程在每次 hook 触发时调用它一次，随即退出；两次会话之间什么都不运行。捕获是确定性抽取（最近 N 条用户消息、涉及的文件路径、diff 统计），召回则对每条记录按 `词法重叠 × 时近衰减` 打分并注入 top-K —— 无嵌入、无向量数据库、无 API 密钥。
+capture 解析会话，将末尾用户消息、路径及 diff 信息写入 JSONL。recall 按加权词汇重合与指数时间衰减排序，并可增加 injected 计数。install 可写入调用同一 CLI 的 Claude Code hook 或 Aider 包装器。
 
-## 目录
+| 组件 | 职责 |
+| --- | --- |
+| `Transcript extraction` | internal/capture |
+| `Local JSONL store` | internal/store |
+| `Lexical recall` | internal/recall |
+| `Counters + hooks` | internal/stats; internal/install |
 
-- [为什么需要它](#为什么需要它)
-- [安装](#安装)
-- [快速开始](#快速开始)
-- [用法](#用法)
-- [演示](#演示)
-- [配置](#配置)
-- [对比 claude-mem](#对比-claude-mem)
-- [定价](#定价)
-- [路线图](#路线图)
-- [参与贡献](#参与贡献)
-- [许可证](#许可证)
+## 安装与快速上手
 
-<h2><img src="https://api.iconify.design/tabler:help-circle.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 为什么需要它</h2>
-
-如今要给 Agent 加上跨会话记忆，意味着挑一个服务（Mem0、Zep、ContextNest）、把它跑起来、接一个嵌入向量提供方、再注册一个账号 —— 一整套流程里，真正的摩擦是**搭建**，而不是召回质量。行业标杆 [claude-mem](https://github.com/thedotmack/claude-mem)（85k★）证明了需求存在，但它通过一次 AI 提供方调用来做压缩，因此需要密钥和网络。`automem` 把这些全部拿掉：把一个二进制丢到 `PATH` 上、跑一次 `automem install`，每个支持的 Agent 就会自动捕获、自动召回 —— 离线、无密钥，且不绑定单一 Agent。
-
-<h2><img src="https://api.iconify.design/tabler:rocket.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 安装</h2>
+使用仓库清单声明的运行时版本。以下源码安装步骤可复现随仓示例。
 
 ```bash
-# Homebrew（macOS / Linux）
-brew install SuperMarioYL/tap/automem
-
-# …或者一行 curl 安装脚本
-curl -fsSL https://lei6393.com/automem/install | sh
-
-# …或者从源码安装（Go 1.24+）
-go install github.com/SuperMarioYL/automem/cmd/automem@latest
+git clone https://github.com/SuperMarioYL/automem.git
+cd automem
+go build ./cmd/automem
 ```
 
-> v0.1 支持 macOS 与 Linux，Windows 见[路线图](#路线图)。
-
-<h2><img src="https://api.iconify.design/tabler:player-play.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 快速开始</h2>
-
-从冷启动到"它记住了"只要三条命令：
+在临时库捕获 examples/session.transcript，召回构造函数决策并检查计数；示例由 Python 3 驱动。
 
 ```bash
-automem install                                   # 接入你的 Agent（Claude Code + Aider）
-claude                                            # 工作一次会话然后退出 —— Stop hook 会捕获它
-claude                                            # 新会话：SessionStart 召回上一次，automem stats 证明它被用到了
+python3 examples/presentation_demo.py
 ```
 
-<details><summary><code>automem install</code> 的输出</summary>
+## 实际运行示例
+
+<picture>
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="./assets/presentation/process-mobile-dark.svg">
+  <source media="(max-width: 600px)" srcset="./assets/presentation/process-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/presentation/process-dark.svg">
+  <img src="./assets/presentation/process-light.svg" width="960" alt="Process diagram">
+</picture>
+
+The included transcript is recalled for auth.py; the store reports one record and one injection.
 
 ```text
-wired claude-code ✓, aider ✓ (unverified)
-  claude-code ✓ ~/.claude/settings.json — wired SessionStart (recall) + Stop (capture) hooks
-  aider ✓ ~/.local/bin/automem-aider — run `automem-aider` in place of `aider`
-    [unverified: no aider on the build machine — please report if it misbehaves]
-```
-
-</details>
-
-<h2><img src="https://api.iconify.design/tabler:terminal-2.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 用法</h2>
-
-`automem install` 会自动接入一切，但每个子命令也能单独使用 —— 方便脚本化 Agent、CI 预热，或手动喂一份 transcript。可复制粘贴的完整往返示例见 [`examples/`](./examples)。
-
-```bash
-# 捕获：从一份会话 transcript（文件或 stdin）追加一条抽取式记录
-automem capture --agent claude-code --cwd ~/proj/api session.transcript
-printf 'User: refactor auth.py to use dataclasses\n' | automem capture --agent claude-code
-
-# 召回：打印与查询最相关的 top-K 历史摘要
-automem recall "上次我们对 auth.py 是怎么决定的？"
-automem recall --top 3 --no-mark "http client retries"   # 只预览，不计入注入次数
-
-# 统计：已存储 vs 已注入 —— 证明记忆真的被用到了
-automem stats
-```
-
-<details><summary><code>recall</code> + <code>stats</code> 输出示例</summary>
-
-```text
-$ automem recall "what did we decide about auth.py last session?"
-# memory 1/2  (score 0.800)
-User: refactor auth.py to use dataclasses  User: keep the old constructor working
+# memory 1/1  (score 1.667)
+also make sure the old constructor keeps working for callers we don't own
+refactor auth.py to use dataclasses
 files: auth.py
-
-# memory 2/2  (score 0.400)
-User: add retry logic to the http client in client.py
-files: client.py
-
-$ automem stats
-2 stored, 2 injected
-  injection rate: 100% (2 of 2 memories recalled at least once)
-  total injections: 2
+1 stored, 1 injected
+  injection rate: 100% (1 of 1 memories recalled at least once)
+  total injections: 1
   by agent:
-    claude-code  2
+    claude-code  1
 ```
 
-</details>
+完整命令与输出保存在 [docs/demo-results.json](./docs/demo-results.json). 输入和复现代码均随仓提供。
 
-付费层命令以桩（stub）形式存在，这样它们的需求量是可度量的：
+![已有终端录制](./assets/demo.gif)
+
+保留已有录制供参考；上方文字示例给出当前可复现的操作。
+
+## 用法
+
+安装后在仓库根目录运行以下命令；处理自己的数据时替换相应路径。
 
 ```bash
-automem sync    # 跨机器同步 —— 需要 automem cloud（付费层）
-automem team    # 团队共享记忆 —— 需要 automem cloud（付费层）
+go run ./cmd/automem capture --agent claude-code examples/session.transcript
+go run ./cmd/automem recall --top 3 --no-mark "auth.py constructor"
+go run ./cmd/automem stats
+go run ./cmd/automem install --dry-run
 ```
 
-<h2><img src="https://api.iconify.design/tabler:photo.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 演示</h2>
+## 配置
 
-两次会话，第二次记得第一次 —— 从真实二进制现场录制：
+AUTOMEM_DIR 默认 ~/.automem，管理 store.jsonl。AUTOMEM_HOME 改变安装路径，AUTOMEM_BIN 指定写入 hook 的可执行文件。recall --top 设置返回数；--no-mark 只预览、不更新计数。install --dry-run 预览配置修改；确认预览后再运行会修改 Agent 配置的 install。
 
-![automem 演示：捕获两次会话、召回相关的那次、stats 证明它被注入](./assets/demo.gif)
+## 集成与职责分工
 
-<h2><img src="https://api.iconify.design/tabler:adjustments.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 配置</h2>
+<picture>
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="./assets/presentation/integrations-mobile-dark.svg">
+  <source media="(max-width: 600px)" srcset="./assets/presentation/integrations-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/presentation/integrations-dark.svg">
+  <img src="./assets/presentation/integrations-light.svg" width="960" alt="Integrations diagram">
+</picture>
 
-`automem` 无需配置文件 —— 开箱即用。几个环境变量可用于重定向它（供测试、沙箱和特殊环境使用）：
+根据工作流选择输入与输出路径。本文本地示例验证其中明确说明的子流程。
 
-| 变量 | 类型 | 默认值 | 含义 |
-|---|---|---|---|
-| `AUTOMEM_DIR` | 路径 | `~/.automem` | 存放 `store.jsonl` 的目录。 |
-| `AUTOMEM_HOME` | 路径 | 系统 home 目录 | `automem install` 接入的 home 根目录（Agent 配置路径由它派生）。 |
-| `AUTOMEM_BIN` | 路径 | 解析出的可执行文件 | `automem install` 写入 hook/wrapper 时烧进去的绝对路径。 |
+| 路径 | 已实现职责 |
+| --- | --- |
+| Text / JSONL | Transcript capture |
+| Local JSONL | Persistent memory records |
+| Claude Code hooks | SessionStart / Stop integration |
+| Aider wrapper | Best-effort integration |
+| Terminal | Recall summaries and statistics |
 
-<h2><img src="https://api.iconify.design/tabler:git-compare.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 对比 claude-mem</h2>
+## 限制与后续方向
 
-诚实地对标那个"验证了需求"的标杆 —— 它在召回质量上胜过 `automem`，而这正是为了零搭建刻意做出的取舍：
+- 召回使用词汇匹配，不是语义嵌入检索；它扫描已有记录，可能漏掉改写表达。
+- injected 计数表示 recall 输出过该记忆，不证明模型实际利用它或改善回答。
+- 源码将 Aider 包装器标为未验证；sync 与 team 是占位命令，此处未提供托管后端。
 
-| | automem | [claude-mem](https://github.com/thedotmack/claude-mem) |
-|---|:---:|:---:|
-| 离线运行，无 API 密钥 | ✓ | —（通过 AI 提供方调用做压缩） |
-| 无账号，无需搭向量数据库 | ✓ | 部分 |
-| 多 Agent（Claude Code **与** Aider） | ✓ | —（仅 Claude Code） |
-| 大规模存储下的召回质量 | 部分（词法 + 时近） | ✓（语义压缩） |
-| 已验证的分发 / 社区 | —（新项目） | ✓（85k★） |
+本地嵌入、更多 Agent 传输适配、Windows 支持与跨机器同步仍是后续方向。
 
-`automem` 并不去抢 claude-mem 的用户 —— 它服务的是那些因为 API 密钥和云依赖而放弃的人群。
+## 许可与贡献
 
-<h2><img src="https://api.iconify.design/tabler:currency-dollar.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 定价</h2>
-
-本地底座**永久免费且开源（Apache-2.0）** —— 捕获、召回、统计、Agent 接入全部离线运行、无需账号。商业层只做本地底座刻意不免费做的那一件事：让数据离开你的机器。
-
-| 层级 | 价格 | 内容 |
-|---|---|---|
-| **本地 Local** | 免费 · Apache-2.0 | 单个离线二进制：捕获、召回、统计、为 Claude Code + Aider 做 `automem install`。无账号、无密钥、无网络。 |
-| **同步 Sync** | 付费 | 跨机器记忆同步（`automem sync`）—— 同一份存储，出现在你写代码的每台机器上。 |
-| **团队 Team** | **$8 / 席位 / 月** | 共享团队作用域 + 跨机器同步 + 审计日志（`automem team`）。为整个团队的决策、坑点、约定提供同一个记忆层。 |
-
-`automem sync` 与 `automem team` 目前以桩形式发布，每次调用都是一次需求信号。托管后端会在兴趣到位时上线 —— 见 `lei6393.com/automem`。
-
-<h2><img src="https://api.iconify.design/tabler:map-2.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 路线图</h2>
-
-- [x] **m1 —— 存储、捕获与召回。** 追加式 JSONL 存储、确定性抽取式捕获（无密钥）、`词法 × 时近` 的 top-K 召回，以及已存储-vs-已注入的统计计数器。
-- [x] **m2 —— Agent 自动接入。** `automem install` 在 macOS + Linux 上接入 Claude Code 的 `SessionStart`/`Stop` hook 与 Aider wrapper；全新的两次会话流程无需手工配置即可记住。
-- [x] **m3 —— 演示与付费层桩。** `automem sync` / `team` 桩、vhs 演示，以及这份双语 README。
-- [ ] 本地嵌入向量回退（仍然无账号、无云密钥），面向更大的存储。
-- [ ] MCP-server 通用传输，让 Cursor、Codex CLI、Gemini CLI 自动发现同一个底座。
-- [ ] 托管 `sync` / `team` 后端（付费层）。
-- [ ] Windows 支持。
-
-<h2><img src="https://api.iconify.design/tabler:heart-handshake.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 参与贡献</h2>
-
-欢迎 Issue 和 PR。Bug 或想法请[提交 Issue](https://github.com/SuperMarioYL/automem/issues)。尤其是 Aider wrapper 是以**未验证**状态发布的（未在真实 Aider 安装上测试过）—— 如果你在用 Aider，无论好坏，一份反馈都非常有价值。
-
-<h2><img src="https://api.iconify.design/tabler:license.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 许可证</h2>
-
-基于 [Apache 2.0 许可证](./LICENSE)发布。
-
-<p align="center"><sub><a href="./LICENSE">Apache-2.0</a> © 2026 SuperMarioYL</sub></p>
+许可见 [LICENSE](./LICENSE). 反馈问题时请提供最小输入、执行命令和实际输出。

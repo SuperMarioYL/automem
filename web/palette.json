@@ -1,0 +1,38 @@
+{
+  "mode": "auto",
+  "id": "56e6e6-6aa4e7-acf6db-1e29c7809161",
+  "identity": "https://github.com/supermarioyl/automem",
+  "primary": "#56e6e6",
+  "secondary": "#6aa4e7",
+  "highlight": "#acf6db",
+  "dark": {
+    "bg": "#050c12",
+    "panel": "#0c171f",
+    "code": "#0a171d",
+    "ink": "#eefdf8",
+    "muted": "#95b9c4",
+    "line": "#173c41",
+    "primary": "#56e6e6",
+    "secondary": "#6aa4e7",
+    "highlight": "#acf6db",
+    "accent": "#56e6e6",
+    "buttonStart": "#318282",
+    "buttonEnd": "#4f79ab",
+    "buttonText": "#ffffff"
+  },
+  "light": {
+    "bg": "#f9fefe",
+    "panel": "#f7fefe",
+    "code": "#f3fdfd",
+    "ink": "#132a30",
+    "muted": "#547a86",
+    "line": "#cbf7f7",
+    "primary": "#307f7f",
+    "secondary": "#4d76a7",
+    "highlight": "#567c6e",
+    "accent": "#307f7f",
+    "buttonStart": "#318282",
+    "buttonEnd": "#4f79ab",
+    "buttonText": "#ffffff"
+  }
+}

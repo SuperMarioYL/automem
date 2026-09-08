@@ -1,0 +1,82 @@
+{
+  "name": "automem",
+  "tagline": "Carry useful session context into the next restart.",
+  "architecture": {
+    "title": "Inside automem",
+    "nodes": [
+      {
+        "title": "Transcript extraction",
+        "detail": "internal/capture"
+      },
+      {
+        "title": "Local JSONL store",
+        "detail": "internal/store"
+      },
+      {
+        "title": "Lexical recall",
+        "detail": "internal/recall"
+      },
+      {
+        "title": "Counters + hooks",
+        "detail": "internal/stats; internal/install"
+      }
+    ],
+    "edges": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        3
+      ]
+    ]
+  },
+  "process": {
+    "title": "From input to a useful result",
+    "steps": [
+      {
+        "title": "Capture transcript",
+        "detail": "Extract messages and paths"
+      },
+      {
+        "title": "Recall decision",
+        "detail": "Lexical + recency ranking"
+      },
+      {
+        "title": "Read counters",
+        "detail": "One stored and surfaced record"
+      }
+    ],
+    "result": "The included transcript is recalled for auth.py; the store reports one record and one injection."
+  },
+  "integrations": {
+    "title": "Supported input and output routes",
+    "items": [
+      {
+        "title": "Text / JSONL",
+        "detail": "Transcript capture"
+      },
+      {
+        "title": "Local JSONL",
+        "detail": "Persistent memory records"
+      },
+      {
+        "title": "Claude Code hooks",
+        "detail": "SessionStart / Stop integration"
+      },
+      {
+        "title": "Aider wrapper",
+        "detail": "Best-effort integration"
+      },
+      {
+        "title": "Terminal",
+        "detail": "Recall summaries and statistics"
+      }
+    ]
+  }
+}

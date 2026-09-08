@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "source_revision": "5a8c98e511a55b56fcb01eba4b761ac34b96660e",
+  "scope": "Offline capture, lexical recall and stored/injected statistics using the bundled transcript in a temporary store; no agent hook is installed.",
+  "steps": [
+    {
+      "label": "Recorded run",
+      "body": "Offline capture, lexical recall and stored/injected statistics using the bundled transcript in a temporary store; no agent hook is installed.",
+      "command": "python3 examples/presentation_demo.py",
+      "output": "# memory 1/1  (score 1.667)\nalso make sure the old constructor keeps working for callers we don't own\nrefactor auth.py to use dataclasses\nfiles: auth.py\n1 stored, 1 injected\n  injection rate: 100% (1 of 1 memories recalled at least once)\n  total injections: 1\n  by agent:\n    claude-code  1"
+    }
+  ]
+}
