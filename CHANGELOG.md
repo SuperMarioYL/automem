@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-19
+
+### Fixed
+
+- **The shipped v0.5.0 code is actually on main** (`VERSION`, `cmd/automem`
+  `version`, `CHANGELOG`). The v0.5.0 version-drift lockstep commit was tagged
+  and released but never pushed back to main, so main carried 0.3.0 version
+  strings and a CHANGELOG missing the 0.4.0/0.5.0 entries since 2026-09-04 —
+  any build from main misreported its version. The lockstep commit is now
+  cherry-picked onto main ahead of this release.
+
+### Added
+
+- **`automem forget` — close the CRUD loop on the memory store**. Captured
+  summaries carry local file paths, and until now there was no way to remove a
+  record. `forget <id>...` deletes specific records (IDs surfaced by the new
+  `recall --print-ids`), `forget --all --yes` empties the store; both rewrite
+  atomically under the store's sidecar flock so a concurrent capture cannot be
+  lost in the rewrite window, and unknown IDs are a no-op.
+
+### Changed
+
+- **The product site now carries `content_version` + a changelog**
+  (`web/site.json`), so a version bump rides the push and Pages rebuilds
+  without a manual refresh.
+
 ## [0.5.0] - 2026-09-04
 
 ### Fixed

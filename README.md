@@ -91,13 +91,15 @@ Run these commands from the repository root after installation. Replace paths fo
 ```bash
 go run ./cmd/automem capture --agent claude-code examples/session.transcript
 go run ./cmd/automem recall --top 3 --no-mark "auth.py constructor"
+go run ./cmd/automem recall --print-ids "auth.py constructor"   # surface record IDs
+go run ./cmd/automem forget <id>                                 # delete a memory by ID
 go run ./cmd/automem stats
 go run ./cmd/automem install --dry-run
 ```
 
 ## Configuration
 
-AUTOMEM_DIR defaults to ~/.automem and owns store.jsonl. AUTOMEM_HOME redirects installation paths, while AUTOMEM_BIN selects the executable written into hooks. recall --top sets result count; --no-mark previews without updating counters. install --dry-run previews config edits. Review that preview before running install, which changes your agent configuration.
+AUTOMEM_DIR defaults to ~/.automem and owns store.jsonl. AUTOMEM_HOME redirects installation paths, while AUTOMEM_BIN selects the executable written into hooks. recall --top sets result count; --no-mark previews without updating counters; --print-ids surfaces the record IDs that forget takes; forget --all --yes empties the store. install --dry-run previews config edits. Review that preview before running install, which changes your agent configuration.
 
 ## Integrations and responsibilities
 

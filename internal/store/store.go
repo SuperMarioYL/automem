@@ -340,3 +340,61 @@ func trimSpace(b []byte) []byte {
 func isSpace(c byte) bool {
 	return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\v' || c == '\f'
 }
+
+// Delete removes every record whose ID is in ids and rewrites the store
+// atomically (same temp+fsync+rename as MarkInjected, under the same sidecar
+// flock so a concurrent Append cannot be lost in the Load→rename window).
+// It returns the number of records actually removed; unknown IDs are ignored.
+func (s *Store) Delete(ids []string) (int, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	gone := make(map[string]struct{}, len(ids))
+	for _, id := range ids {
+		gone[id] = struct{}{}
+	}
+
+	var removed int
+	if err := s.withLock(func() error {
+		records, err := s.Load()
+		if err != nil {
+			return err
+		}
+		kept := make([]Record, 0, len(records))
+		for _, r := range records {
+			if _, ok := gone[r.ID]; ok {
+				removed++
+				continue
+			}
+			kept = append(kept, r)
+		}
+		if removed == 0 {
+			return nil
+		}
+		return s.rewrite(kept)
+	}); err != nil {
+		return 0, err
+	}
+	return removed, nil
+}
+
+// DeleteAll empties the store atomically. It returns the number of records
+// removed. The store file is left present but empty, so a subsequent Append
+// works without re-creating anything.
+func (s *Store) DeleteAll() (int, error) {
+	var removed int
+	if err := s.withLock(func() error {
+		records, err := s.Load()
+		if err != nil {
+			return err
+		}
+		removed = len(records)
+		if removed == 0 {
+			return nil
+		}
+		return s.rewrite(nil)
+	}); err != nil {
+		return 0, err
+	}
+	return removed, nil
+}

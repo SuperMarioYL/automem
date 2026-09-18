@@ -10,7 +10,8 @@
   },
   "meta": {
     "visual_style": "neon-particle",
-    "demo_source": "docs/demo-results.json"
+    "demo_source": "docs/demo-results.json",
+    "content_version": "0.6.0"
   },
   "hero": {
     "headline": {
@@ -223,5 +224,18 @@
         "code": "go run ./cmd/automem capture --agent claude-code examples/session.transcript\ngo run ./cmd/automem recall --top 3 --no-mark \"auth.py constructor\"\ngo run ./cmd/automem stats\ngo run ./cmd/automem install --dry-run"
       }
     ]
-  }
+  },
+  "content_version": "v0.6.0",
+  "changelog": [
+    {
+      "version": "v0.6.0",
+      "zh": "新增 automem forget：按 ID 删除记忆（recall --print-ids 查看 ID）或 --all --yes 清空存储，删除走原子重写；修复 v0.5.0 版本号提交未合回 main 的问题；站点开始携带 content_version。",
+      "en": "New automem forget: delete memories by ID (see recall --print-ids) or wipe with --all --yes, atomically; fixed the v0.5.0 version commit that never landed on main; the site now carries content_version."
+    },
+    {
+      "version": "v0.5.0",
+      "zh": "版本漂移 lockstep 修复（VERSION + main.version + CHANGELOG 头部一致）。",
+      "en": "Version-drift lockstep fixes (VERSION + main.version + CHANGELOG head in sync)."
+    }
+  ]
 }

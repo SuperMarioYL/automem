@@ -210,3 +210,100 @@ func firstLine(s string) string {
 	}
 	return s
 }
+
+func TestForgetDeletesByID(t *testing.T) {
+	t.Setenv("AUTOMEM_DIR", t.TempDir())
+
+	// capture two memories
+	for _, in := range []string{"user: fix auth login\n", "user: fix billing bug\n"} {
+		var out bytes.Buffer
+		root := newRootCmd()
+		root.SetOut(&out)
+		root.SetErr(&out)
+		root.SetArgs([]string{"capture", "-"})
+		root.SetIn(strings.NewReader(in))
+		if err := root.Execute(); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// recall with --print-ids surfaces the record IDs
+	var recallOut bytes.Buffer
+	root := newRootCmd()
+	root.SetOut(&recallOut)
+	root.SetErr(&recallOut)
+	root.SetArgs([]string{"recall", "auth login", "--no-mark", "--print-ids"})
+	if err := root.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	var id string
+	for _, line := range strings.Split(recallOut.String(), "\n") {
+		if strings.HasPrefix(line, "# id ") {
+			id = strings.TrimSpace(strings.TrimPrefix(line, "# id "))
+			break
+		}
+	}
+	if id == "" {
+		t.Fatalf("recall --print-ids printed no id: %q", recallOut.String())
+	}
+
+	// forget it
+	var forgetOut bytes.Buffer
+	root = newRootCmd()
+	root.SetOut(&forgetOut)
+	root.SetErr(&forgetOut)
+	root.SetArgs([]string{"forget", id})
+	if err := root.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(forgetOut.String(), "forgot 1 record(s)") {
+		t.Fatalf("forget output = %q", forgetOut.String())
+	}
+
+	// the store now yields nothing for that query
+	var after bytes.Buffer
+	root = newRootCmd()
+	root.SetOut(&after)
+	root.SetErr(&after)
+	root.SetIn(strings.NewReader(""))
+	root.SetArgs([]string{"recall", "auth login", "--no-mark"})
+	if err := root.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(after.String(), "(no relevant memories)") {
+		t.Fatalf("deleted memory still recalled: %q", after.String())
+	}
+}
+
+func TestForgetAllRequiresYes(t *testing.T) {
+	t.Setenv("AUTOMEM_DIR", t.TempDir())
+
+	root := newRootCmd()
+	root.SetOut(&bytes.Buffer{})
+	root.SetErr(&bytes.Buffer{})
+	root.SetIn(strings.NewReader("user: x\n"))
+	root.SetArgs([]string{"capture", "-"})
+	if err := root.Execute(); err != nil {
+		t.Fatal(err)
+	}
+
+	root = newRootCmd()
+	root.SetOut(&bytes.Buffer{})
+	root.SetErr(&bytes.Buffer{})
+	root.SetArgs([]string{"forget", "--all"})
+	if err := root.Execute(); err == nil {
+		t.Fatal("forget --all without --yes must fail")
+	}
+
+	var out bytes.Buffer
+	root = newRootCmd()
+	root.SetOut(&out)
+	root.SetErr(&out)
+	root.SetArgs([]string{"forget", "--all", "--yes"})
+	if err := root.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "forgot 1 record(s)") {
+		t.Fatalf("forget --all --yes output = %q", out.String())
+	}
+}

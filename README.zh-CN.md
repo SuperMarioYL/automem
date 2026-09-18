@@ -91,6 +91,8 @@ files: auth.py
 ```bash
 go run ./cmd/automem capture --agent claude-code examples/session.transcript
 go run ./cmd/automem recall --top 3 --no-mark "auth.py constructor"
+go run ./cmd/automem recall --print-ids "auth.py constructor"   # surface record IDs
+go run ./cmd/automem forget <id>                                 # delete a memory by ID
 go run ./cmd/automem stats
 go run ./cmd/automem install --dry-run
 ```

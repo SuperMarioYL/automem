@@ -33,7 +33,7 @@ const paidTierHint = "requires automem cloud — see lei6393.com/automem"
 // version is the semantic version of the binary. It is overridden at release
 // time via -ldflags "-X main.version=<tag>"; the default mirrors the VERSION
 // file so a `go build` from source still reports something sensible.
-var version = "0.5.0"
+var version = "0.6.0"
 
 func main() {
 	if err := newRootCmd().Execute(); err != nil {
@@ -63,6 +63,7 @@ func newRootCmd() *cobra.Command {
 		newCaptureCmd(),
 		newRecallCmd(),
 		newStatsCmd(),
+		newForgetCmd(),
 		newInstallCmd(),
 		newSyncCmd(),
 		newTeamCmd(),
@@ -198,6 +199,7 @@ func newCaptureCmd() *cobra.Command {
 func newRecallCmd() *cobra.Command {
 	var topK int
 	var noMark bool
+	var printIDs bool
 
 	cmd := &cobra.Command{
 		Use:   "recall [query]",
@@ -230,6 +232,9 @@ func newRecallCmd() *cobra.Command {
 			out := cmd.OutOrStdout()
 			for i, r := range results {
 				fmt.Fprintf(out, "# memory %d/%d  (score %.3f)\n", i+1, len(results), r.Score)
+				if printIDs {
+					fmt.Fprintf(out, "# id %s\n", r.Record.ID)
+				}
 				fmt.Fprintln(out, r.Record.Summary)
 				if i < len(results)-1 {
 					fmt.Fprintln(out)
@@ -249,6 +254,7 @@ func newRecallCmd() *cobra.Command {
 
 	cmd.Flags().IntVarP(&topK, "top", "k", recall.DefaultTopK, "number of memories to surface")
 	cmd.Flags().BoolVar(&noMark, "no-mark", false, "don't increment the injected counter (dry preview)")
+	cmd.Flags().BoolVar(&printIDs, "print-ids", false, "print each surfaced record's ID (the argument `forget` takes)")
 	return cmd
 }
 
@@ -292,6 +298,58 @@ func newStatsCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+// newForgetCmd closes the CRUD loop on the memory store: captured summaries
+// carry local file paths, so a memory tool needs a removal path. `forget <id>`
+// deletes specific records (IDs come from `recall` output via --print-ids or
+// the store file); `forget --all` empties the store after confirmation unless
+// --yes is given.
+func newForgetCmd() *cobra.Command {
+	var all bool
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "forget [id...]",
+		Short: "Delete stored memories by ID (or --all)",
+		Long: "Remove records from ~/.automem/store.jsonl. Pass one or more record\n" +
+			"IDs (as printed by `automem recall --print-ids`), or --all to empty\n" +
+			"the store. Deletion is atomic; unknown IDs are ignored.",
+		Args: cobra.ArbitraryArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if all && len(args) > 0 {
+				return fmt.Errorf("forget: pass either --all or record IDs, not both")
+			}
+			if !all && len(args) == 0 {
+				return fmt.Errorf("forget: pass record IDs (see `automem recall --print-ids`) or --all")
+			}
+			st, err := openStore()
+			if err != nil {
+				return err
+			}
+			if all {
+				if !yes {
+					return fmt.Errorf("forget --all requires --yes (this empties every stored memory)")
+				}
+				n, err := st.DeleteAll()
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "forgot %d record(s)\n", n)
+				return nil
+			}
+			n, err := st.Delete(args)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "forgot %d record(s)\n", n)
+			return nil
+		},
+	}
+
+	cmd.Flags().BoolVar(&all, "all", false, "delete every stored record (requires --yes)")
+	cmd.Flags().BoolVar(&yes, "yes", false, "confirm --all without prompting")
+	return cmd
 }
 
 func newInstallCmd() *cobra.Command {
